@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 const ELO_LEVELS = [
-  { label: 'Débutant', value: 800, icon: '🌱' },
-  { label: 'Intermédiaire', value: 1200, icon: '♟' },
-  { label: 'Avancé', value: 1600, icon: '⚔' },
-  { label: 'Expert', value: 2000, icon: '👑' },
-  { label: 'Maître', value: 2500, icon: '🏆' },
+  { label: '800', value: 800 },
+  { label: '1200', value: 1200 },
+  { label: '1600', value: 1600 },
+  { label: '2000', value: 2000 },
+  { label: '2500', value: 2500 },
 ];
 
 export default function GameControls({
@@ -29,10 +29,10 @@ export default function GameControls({
   };
 
   return (
-    <div className="game-controls">
-      <div className="controls-row">
+    <>
+      <div className="game-controls">
         <button className="ctrl-btn primary" onClick={() => setShowNewGame(true)}>
-          <span className="ctrl-icon">+</span> Nouvelle partie
+          <span className="ctrl-icon">+</span> Nouvelle
         </button>
         <button className="ctrl-btn" onClick={undoMove} disabled={moveHistory.length === 0}>
           <span className="ctrl-icon">↩</span> Annuler
@@ -40,9 +40,9 @@ export default function GameControls({
         <button className="ctrl-btn" onClick={flipBoard}>
           <span className="ctrl-icon">⟳</span> Retourner
         </button>
-      </div>
 
-      <div className="controls-row">
+        <span className="ctrl-separator" />
+
         <button className="ctrl-btn accent" onClick={onHint} disabled={status === 'thinking' || !!gameResult}>
           💡 Indice
         </button>
@@ -55,19 +55,18 @@ export default function GameControls({
         <button className="ctrl-btn secondary" onClick={onReview} disabled={moveHistory.length === 0}>
           <span className="ctrl-icon">🔍</span> Revue
         </button>
-      </div>
 
-      <div className="elo-selector">
-        <span className="elo-label">Niveau IA</span>
-        <div className="elo-badges">
+        <span className="ctrl-separator" />
+
+        <div className="elo-control">
+          <span className="elo-label">ELO</span>
           {ELO_LEVELS.map(l => (
             <button
               key={l.value}
-              className={`elo-badge ${elo === l.value ? 'active' : ''}`}
+              className={`elo-option ${elo === l.value ? 'active' : ''}`}
               onClick={() => setElo(l.value)}
             >
-              <span className="elo-icon">{l.icon}</span>
-              <span className="elo-text">{l.label}</span>
+              {l.label}
             </button>
           ))}
         </div>
@@ -94,20 +93,20 @@ export default function GameControls({
                 >
                   <span className="option-icon">👥</span>
                   <span className="option-label">Deux joueurs</span>
-                  <span className="option-desc">Jouez à deux sur cet écran</span>
+                  <span className="option-desc">Jouez à deux</span>
                 </button>
               </div>
             </div>
             <div className="modal-section">
               <h3>Vous jouez</h3>
               <div className="modal-options">
-                <button className="modal-option color-option" onClick={() => handleNewGame('w', gameMode)}>
-                  <span className="color-icon">♔</span>
+                <button className="modal-option" onClick={() => handleNewGame('w', gameMode)}>
+                  <span className="option-icon">♔</span>
                   <span className="option-label">Les Blancs</span>
                   <span className="option-desc">Premier coup</span>
                 </button>
-                <button className="modal-option color-option" onClick={() => handleNewGame('b', gameMode)}>
-                  <span className="color-icon">♚</span>
+                <button className="modal-option" onClick={() => handleNewGame('b', gameMode)}>
+                  <span className="option-icon">♚</span>
                   <span className="option-label">Les Noirs</span>
                   <span className="option-desc">L'IA commence</span>
                 </button>
@@ -117,6 +116,6 @@ export default function GameControls({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

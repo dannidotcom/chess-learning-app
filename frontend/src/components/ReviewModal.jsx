@@ -15,7 +15,7 @@ export default function ReviewModal({ review, onClose }) {
         </div>
 
         <div className="review-stats">
-          <div className="stat-card">
+          <div className="stat-card perfect">
             <span className="stat-value">{total_moves}</span>
             <span className="stat-label">Coups</span>
           </div>

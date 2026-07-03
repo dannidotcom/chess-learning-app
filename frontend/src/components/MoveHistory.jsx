@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-export default function MoveHistory({ moves, gameResult, orientation }) {
+export default function MoveHistory({ moves, gameResult }) {
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -18,19 +18,21 @@ export default function MoveHistory({ moves, gameResult, orientation }) {
     });
   }
 
+  const exportPgn = () => {
+    const pgnLines = pairs.map(p =>
+      `${p.number}. ${p.white}${p.black ? ' ' + p.black : ''}`
+    );
+    const pgn = pgnLines.join('\n') + (gameResult ? ' ' + gameResult : '');
+    navigator.clipboard.writeText(pgn);
+  };
+
   return (
-    <div className="move-history-panel">
-      <div className="panel-header">
-        <h3>Coups</h3>
-        <div className="panel-badges">
-          <span className="badge move-count">{moves.length} coup{moves.length > 1 ? 's' : ''}</span>
-        </div>
-      </div>
+    <>
       <div className="moves-table-wrapper" ref={listRef}>
         {pairs.length === 0 && !gameResult && (
           <div className="empty-moves">
             <span className="empty-icon">♟</span>
-            <span>Les coups s'afficheront ici</span>
+            <span>Les coups s'affichent ici</span>
           </div>
         )}
         <table className="moves-table">
@@ -54,6 +56,6 @@ export default function MoveHistory({ moves, gameResult, orientation }) {
           {gameResult}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -52,6 +52,10 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
     }
   }, [chatMsg, chatHistory]);
 
+  const handleSuggestion = (s) => {
+    setChatMsg(s);
+  };
+
   const evalValue = analysis?.eval_cp;
   const evalPct = evalValue !== null && evalValue !== undefined
     ? Math.min(100, Math.max(0, 50 + evalValue / 200))
@@ -165,9 +169,7 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
                 <p>Posez des questions sur la position, des concepts, ou des conseils.</p>
                 <div className="chat-suggestions">
                   {['Quel est le meilleur plan ici ?', 'Explique le clouage', 'Que dois-je éviter dans cette position ?'].map(s => (
-                    <button key={s} className="suggestion-chip" onClick={() => {
-                      setChatMsg(s);
-                    }}>
+                    <button key={s} className="suggestion-chip" onClick={() => handleSuggestion(s)}>
                       {s}
                     </button>
                   ))}
