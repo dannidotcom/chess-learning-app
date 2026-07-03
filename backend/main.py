@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import config
 from core.engine import EngineFactory
-from routers import chess_router, llm_router
+from routers import chess_router, llm_router, puzzle_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -91,6 +91,7 @@ app.add_middleware(
 
 app.include_router(chess_router.router)
 app.include_router(llm_router.router)
+app.include_router(puzzle_router.router)
 
 
 @app.get("/api/health")

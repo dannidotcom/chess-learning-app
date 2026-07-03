@@ -5,6 +5,8 @@ import * as api from '../api/chess';
 export default function useChessGame() {
   const [game, setGame] = useState(() => new Chess());
   const [fen, setFen] = useState(game.fen());
+  const [viewFen, setViewFen] = useState(null);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [status, setStatus] = useState('idle');
   const [moveHistory, setMoveHistory] = useState([]);
   const [playerColor, setPlayerColor] = useState('w');
@@ -15,31 +17,74 @@ export default function useChessGame() {
   const [multiPv, setMultiPv] = useState([]);
   const [hintMove, setHintMove] = useState(null);
   const [lastEval, setLastEval] = useState(null);
+  const [evalHistory, setEvalHistory] = useState([]);
   const [review, setReview] = useState(null);
   const [openingName, setOpeningName] = useState('');
   const [lastMoveSan, setLastMoveSan] = useState(null);
   const [checkSquare, setCheckSquare] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [clockWhite, setClockWhite] = useState(600);
+  const [clockBlack, setClockBlack] = useState(600);
+  const [timeControl, setTimeControl] = useState('600');
+  const [clockRunning, setClockRunning] = useState(false);
+  const [showClock, setShowClock] = useState(false);
+  const [annotations, setAnnotations] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const gameRef = useRef(game);
   const abortRef = useRef(false);
+  const clockRef = useRef(null);
+  const soundCallbacks = useRef({});
+
+  const registerSound = useCallback((cb) => {
+    soundCallbacks.current = cb;
+  }, []);
 
   useEffect(() => {
     gameRef.current = game;
   }, [game]);
 
-  const updateGame = useCallback((newGame) => {
+  useEffect(() => {
+    if (clockRunning && !gameResult) {
+      clockRef.current = setInterval(() => {
+        if (game.turn() === 'w') {
+          setClockWhite(prev => Math.max(0, prev - 1));
+        } else {
+          setClockBlack(prev => Math.max(0, prev - 1));
+        }
+      }, 1000);
+    }
+    return () => clearInterval(clockRef.current);
+  }, [clockRunning, game.turn, gameResult]);
+
+  const updateGame = useCallback((newGame, soundAction) => {
     gameRef.current = newGame;
     setGame(newGame);
-    setFen(newGame.fen());
+    const fenStr = newGame.fen();
+    setFen(fenStr);
     const hist = newGame.history();
     setMoveHistory(hist);
+    setHistoryIndex(hist.length - 1);
+    setViewFen(null);
+    setIsNavigating(false);
     if (hist.length > 0) setLastMoveSan(hist[hist.length - 1]);
 
+    if (soundAction && soundCallbacks.current) {
+      const s = soundCallbacks.current;
+      if (soundAction === 'capture') s.playCapture();
+      else if (soundAction === 'castle') s.playCastle();
+      else if (soundAction === 'check') s.playCheck();
+      else s.playMove();
+    }
+
     if (newGame.isCheck()) {
-      const king = newGame.board().flat().find(
-        p => p && p.type === 'k' && p.color !== newGame.turn()
-      );
-      setCheckSquare(king ? `${String.fromCharCode(97 + king.square.charCodeAt(0) - 97)}${8 - king.square.charCodeAt(1) + 49}` : null);
+      const squares = newGame.board().flat().filter(p => p && p.type === 'k');
+      const king = squares.find(p => p.color !== newGame.turn());
+      if (king) {
+        const file = String.fromCharCode(97 + king.square.charCodeAt(0) - 97);
+        const rank = 8 - king.square.charCodeAt(1) + 49;
+        setCheckSquare(`${file}${rank}`);
+      }
     } else {
       setCheckSquare(null);
     }
@@ -57,6 +102,8 @@ export default function useChessGame() {
         result = 'Fin de partie';
       }
       setGameResult(result);
+      if (soundCallbacks.current) soundCallbacks.current.playGameOver();
+      setClockRunning(false);
     } else {
       setGameResult(null);
     }
@@ -70,8 +117,9 @@ export default function useChessGame() {
       const res = await api.getAiMove(currentGame.fen(), currentElo);
       if (abortRef.current) return;
       const ng = new Chess(currentGame.fen());
-      ng.move(res.move);
-      updateGame(ng);
+      const move = ng.move(res.move);
+      const action = move.captured ? 'capture' : ng.isCheck() ? 'check' : null;
+      updateGame(ng, action);
     } catch (e) {
       console.error(e);
     } finally {
@@ -86,8 +134,8 @@ export default function useChessGame() {
     try {
       const move = ng.move({ from, to, promotion: promotion || undefined });
       if (!move) return false;
-      updateGame(ng);
-
+      const action = move.captured ? 'capture' : move.flags.includes('k') || move.flags.includes('q') ? 'castle' : ng.isCheck() ? 'check' : null;
+      updateGame(ng, action);
       if (gameMode === 'ai' && ng.turn() !== playerColor && !ng.isGameOver()) {
         setTimeout(() => makeAiMove(ng, elo), 100);
       }
@@ -97,7 +145,7 @@ export default function useChessGame() {
     }
   }, [status, gameResult, gameMode, playerColor, elo, makeAiMove, updateGame]);
 
-  const startNewGame = useCallback((color = 'w', mode = 'ai') => {
+  const startNewGame = useCallback((color = 'w', mode = 'ai', time = '600') => {
     abortRef.current = true;
     setStatus('idle');
     setAnalysis(null);
@@ -106,11 +154,29 @@ export default function useChessGame() {
     setReview(null);
     setHintMove(null);
     setLastEval(null);
+    setEvalHistory([]);
     setOpeningName('');
     setLastMoveSan(null);
     setCheckSquare(null);
+    setAnnotations([]);
     setPlayerColor(color);
     setGameMode(mode);
+    setViewFen(null);
+    setHistoryIndex(-1);
+    setIsNavigating(false);
+
+    if (time) {
+      const sec = parseInt(time);
+      setClockWhite(sec);
+      setClockBlack(sec);
+      setTimeControl(time);
+      setShowClock(true);
+      setClockRunning(true);
+    } else {
+      setShowClock(false);
+      setClockRunning(false);
+    }
+
     const ng = new Chess();
     updateGame(ng);
     if (mode === 'ai' && color === 'b') {
@@ -123,7 +189,7 @@ export default function useChessGame() {
     if (moveHistory.length < 1) return;
     const targetLen = gameMode === 'ai' ? Math.max(0, moveHistory.length - 2) : Math.max(0, moveHistory.length - 1);
     if (targetLen <= 0) {
-      startNewGame(playerColor, gameMode);
+      startNewGame(playerColor, gameMode, showClock ? timeControl : null);
       return;
     }
     const ng = new Chess();
@@ -135,7 +201,32 @@ export default function useChessGame() {
     updateGame(ng);
     setAnalysis(null);
     setMultiPv([]);
-  }, [moveHistory, gameMode, playerColor, startNewGame, updateGame]);
+  }, [moveHistory, gameMode, playerColor, startNewGame, updateGame, showClock, timeControl]);
+
+  const goToMove = useCallback((index) => {
+    if (index < -1 || index >= moveHistory.length) return;
+    setHistoryIndex(index);
+    if (index === -1) {
+      const ng = new Chess();
+      setViewFen(ng.fen());
+      setIsNavigating(true);
+      return;
+    }
+    const ng = new Chess();
+    for (let i = 0; i <= index; i++) {
+      try { ng.move(moveHistory[i]); } catch { break; }
+    }
+    setViewFen(ng.fen());
+    setIsNavigating(true);
+  }, [moveHistory]);
+
+  const goForward = useCallback(() => {
+    goToMove(historyIndex + 1);
+  }, [goToMove, historyIndex]);
+
+  const goBack = useCallback(() => {
+    goToMove(historyIndex - 1);
+  }, [goToMove, historyIndex]);
 
   const fetchAnalysis = useCallback(async () => {
     const currentFen = gameRef.current.fen();
@@ -166,6 +257,8 @@ export default function useChessGame() {
     if (hist.length === 0) return null;
     const res = await api.reviewGame(hist);
     setReview(res);
+    const evals = res.moves.map(m => m.eval_cp);
+    setEvalHistory(evals);
     return res;
   }, []);
 
@@ -177,13 +270,26 @@ export default function useChessGame() {
     return gameRef.current.pgn();
   }, []);
 
+  const addAnnotation = useCallback((type, square, color) => {
+    setAnnotations(prev => [...prev, { type, square, color, id: Date.now() }]);
+  }, []);
+
+  const clearAnnotations = useCallback(() => {
+    setAnnotations([]);
+  }, []);
+
   return {
-    game, fen, status, moveHistory,
+    game, fen, viewFen, status, moveHistory, historyIndex, isNavigating,
     playerColor, gameMode, elo, gameResult,
-    analysis, multiPv, hintMove, lastEval, review, openingName,
+    analysis, multiPv, hintMove, lastEval, evalHistory, review, openingName,
     lastMoveSan, checkSquare,
+    clockWhite, clockBlack, timeControl, clockRunning, showClock,
+    annotations, soundEnabled,
     playerMove, startNewGame, undoMove, flipBoard,
     fetchAnalysis, fetchMultiPv, fetchHint, fetchReview,
+    goToMove, goForward, goBack,
     setElo, setPlayerColor, setGameMode, getPgn,
+    addAnnotation, clearAnnotations,
+    setSoundEnabled, setShowClock, registerSound,
   };
 }

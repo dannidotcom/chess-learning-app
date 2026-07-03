@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as api from '../api/chess';
+import EvalChart from './EvalChart';
 
 function formatEval(cp) {
   if (cp === null || cp === undefined) return '';
@@ -9,12 +10,13 @@ function formatEval(cp) {
   return v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
 }
 
-export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHistory, gameState }) {
+export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHistory, gameState, evalHistory }) {
   const [llmTab, setLlmTab] = useState('position');
   const [llmResult, setLlmResult] = useState(null);
   const [llmLoading, setLlmLoading] = useState(false);
   const [chatMsg, setChatMsg] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const { fetchReview } = gameState;
 
   const fetchLlmPosition = useCallback(async () => {
     setLlmLoading(true);
@@ -62,13 +64,16 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
     : 50;
 
   return (
-    <div className="analysis-panel">
+    <div className="analysis-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="panel-tabs">
         <button className={`panel-tab ${llmTab === 'position' ? 'active' : ''}`} onClick={() => setLlmTab('position')}>
           Analyse
         </button>
+        <button className={`panel-tab ${llmTab === 'graph' ? 'active' : ''}`} onClick={() => setLlmTab('graph')}>
+          Graphique
+        </button>
         <button className={`panel-tab ${llmTab === 'coach' ? 'active' : ''}`} onClick={() => setLlmTab('coach')}>
-          Coach IA
+          Coach
         </button>
         <button className={`panel-tab ${llmTab === 'chat' ? 'active' : ''}`} onClick={() => setLlmTab('chat')}>
           Chat
@@ -140,6 +145,18 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
         </div>
       )}
 
+      {llmTab === 'graph' && (
+        <div className="panel-content">
+          <div className="section-title" style={{ marginBottom: 8 }}>Évolution de l'évaluation</div>
+          <EvalChart evalHistory={evalHistory} />
+          {moveHistory.length >= 4 && evalHistory.length < 2 && (
+            <button className="llm-btn" onClick={fetchReview} style={{ marginTop: 12 }}>
+              Analyser la partie
+            </button>
+          )}
+        </div>
+      )}
+
       {llmTab === 'coach' && (
         <div className="panel-content">
           <p className="coach-intro">
@@ -161,8 +178,8 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
       )}
 
       {llmTab === 'chat' && (
-        <div className="panel-content chat-tab">
-          <div className="chat-messages">
+        <div className="panel-content chat-tab" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="chat-messages" style={{ flex: 1 }}>
             {chatHistory.length === 0 && (
               <div className="chat-empty">
                 <span className="chat-empty-icon">🤖</span>
@@ -189,7 +206,7 @@ export default function AnalysisPanel({ analysis, multiPv, hintMove, fen, moveHi
               </div>
             )}
           </div>
-          <div className="chat-input">
+          <div className="chat-input" style={{ flexShrink: 0 }}>
             <input
               type="text"
               value={chatMsg}

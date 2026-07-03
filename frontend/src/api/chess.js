@@ -1,5 +1,14 @@
 const API = '/api';
 
+async function get(path) {
+  const res = await fetch(`${API}${path}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Erreur API');
+  }
+  return res.json();
+}
+
 async function post(path, body) {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',
@@ -59,4 +68,16 @@ export function llmTeach(fen, concept) {
 
 export function llmChat(messages) {
   return post('/llm/chat', { messages });
+}
+
+export function getRandomPuzzle(ratingMin = 0, ratingMax = 4000) {
+  return get(`/puzzles/random?rating_min=${ratingMin}&rating_max=${ratingMax}`);
+}
+
+export function checkPuzzle(puzzleId, move) {
+  return post('/puzzles/check', { puzzle_id: puzzleId, move });
+}
+
+export function getPuzzle(puzzleId) {
+  return get(`/puzzles/${puzzleId}`);
 }

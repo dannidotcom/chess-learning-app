@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1",
+    "moves": ["O-O", "Nge7"],
+    "rating": 1200,
+    "theme": "roque",
+    "description": "Trouvez le meilleur coup pour les Blancs"
+  },
+  {
+    "id": 2,
+    "fen": "r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1",
+    "moves": ["Nxe5"],
+    "rating": 1300,
+    "theme": "tactique",
+    "description": "Les Blancs peuvent gagner un pion"
+  },
+  {
+    "id": 3,
+    "fen": "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 1",
+    "moves": ["d5", "exd5", "cxd5"],
+    "rating": 1400,
+    "theme": "ouverture",
+    "description": "Jouez le meilleur coup au centre"
+  },
+  {
+    "id": 4,
+    "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 0 1",
+    "moves": ["Bxf7+", "Kxf7", "Ng5+"],
+    "rating": 1500,
+    "theme": "attaque",
+    "description": "Sacrifiez pour ouvrir le roi adverse"
+  },
+  {
+    "id": 5,
+    "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQ - 0 1",
+    "moves": ["Bxc5"],
+    "rating": 1200,
+    "theme": "tactique",
+    "description": "Gagnez du matériel"
+  },
+  {
+    "id": 6,
+    "fen": "r1bq1rk1/pppp1ppp/2n5/2b1P3/2B5/5N2/PPPP1PPP/R1BQK2R w KQ - 0 1",
+    "moves": ["Bxf7+", "Rxf7", "Ne6"],
+    "rating": 1600,
+    "theme": "combinaison",
+    "description": "Une combinaison gagnante"
+  }
+]

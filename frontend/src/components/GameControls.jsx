@@ -8,23 +8,34 @@ const ELO_LEVELS = [
   { label: '2500', value: 2500 },
 ];
 
+const TIME_OPTIONS = [
+  { label: '1 min', value: '60' },
+  { label: '3 min', value: '180' },
+  { label: '5 min', value: '300' },
+  { label: '10 min', value: '600' },
+  { label: '30 min', value: '1800' },
+];
+
 export default function GameControls({
   gameState,
   onAnalyse,
   onMultiPv,
   onHint,
   onReview,
+  onPuzzle,
 }) {
   const {
     playerColor, gameMode, elo, status, gameResult,
     moveHistory, startNewGame, undoMove, flipBoard,
-    setElo, setGameMode,
+    setElo, setGameMode, goBack, goForward, historyIndex, isNavigating,
+    soundEnabled, setSoundEnabled, showClock,
   } = gameState;
 
   const [showNewGame, setShowNewGame] = useState(false);
+  const [pendingTime, setPendingTime] = useState('600');
 
   const handleNewGame = (color, mode) => {
-    startNewGame(color, mode);
+    startNewGame(color, mode, mode === 'ai' || mode === 'local' ? pendingTime : null);
     setShowNewGame(false);
   };
 
@@ -34,12 +45,24 @@ export default function GameControls({
         <button className="ctrl-btn primary" onClick={() => setShowNewGame(true)}>
           <span className="ctrl-icon">+</span> Nouvelle
         </button>
-        <button className="ctrl-btn" onClick={undoMove} disabled={moveHistory.length === 0}>
+        <button className="ctrl-btn" onClick={undoMove} disabled={moveHistory.length === 0 || isNavigating}>
           <span className="ctrl-icon">↩</span> Annuler
         </button>
         <button className="ctrl-btn" onClick={flipBoard}>
           <span className="ctrl-icon">⟳</span> Retourner
         </button>
+
+        {(moveHistory.length > 0) && (
+          <>
+            <span className="ctrl-separator" />
+            <button className="ctrl-btn" onClick={goBack} disabled={historyIndex < 0}>
+              ◀
+            </button>
+            <button className="ctrl-btn" onClick={goForward} disabled={historyIndex >= moveHistory.length - 1}>
+              ▶
+            </button>
+          </>
+        )}
 
         <span className="ctrl-separator" />
 
@@ -54,6 +77,19 @@ export default function GameControls({
         </button>
         <button className="ctrl-btn secondary" onClick={onReview} disabled={moveHistory.length === 0}>
           <span className="ctrl-icon">🔍</span> Revue
+        </button>
+        <button className="ctrl-btn secondary" onClick={onPuzzle}>
+          <span className="ctrl-icon">🧩</span> Puzzle
+        </button>
+
+        <span className="ctrl-separator" />
+
+        <button
+          className="ctrl-btn"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          title="Son"
+        >
+          {soundEnabled ? '🔊' : '🔇'}
         </button>
 
         <span className="ctrl-separator" />
@@ -94,6 +130,36 @@ export default function GameControls({
                   <span className="option-icon">👥</span>
                   <span className="option-label">Deux joueurs</span>
                   <span className="option-desc">Jouez à deux</span>
+                </button>
+                <button
+                  className={`modal-option ${gameMode === 'analysis' ? 'active' : ''}`}
+                  onClick={() => setGameMode('analysis')}
+                >
+                  <span className="option-icon">🔬</span>
+                  <span className="option-label">Analyse libre</span>
+                  <span className="option-desc">Bougez librement les pièces</span>
+                </button>
+              </div>
+            </div>
+            <div className="modal-section">
+              <h3>Temps</h3>
+              <div className="modal-options" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+                {TIME_OPTIONS.map(t => (
+                  <button
+                    key={t.value}
+                    className={`modal-option ${pendingTime === t.value ? 'active' : ''}`}
+                    onClick={() => setPendingTime(t.value)}
+                    style={{ padding: '12px 8px' }}
+                  >
+                    <span className="option-label" style={{ fontSize: '0.75rem' }}>{t.label}</span>
+                  </button>
+                ))}
+                <button
+                  className={`modal-option ${!pendingTime ? 'active' : ''}`}
+                  onClick={() => setPendingTime(null)}
+                  style={{ padding: '12px 8px' }}
+                >
+                  <span className="option-label" style={{ fontSize: '0.75rem' }}>∞</span>
                 </button>
               </div>
             </div>

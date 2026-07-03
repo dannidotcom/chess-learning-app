@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-export default function MoveHistory({ moves, gameResult }) {
+export default function MoveHistory({ moves, gameResult, historyIndex, onMoveClick }) {
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -13,18 +13,10 @@ export default function MoveHistory({ moves, gameResult }) {
   for (let i = 0; i < moves.length; i += 2) {
     pairs.push({
       number: Math.floor(i / 2) + 1,
-      white: moves[i] || '',
-      black: moves[i + 1] || '',
+      white: { san: moves[i], index: i },
+      black: moves[i + 1] ? { san: moves[i + 1], index: i + 1 } : null,
     });
   }
-
-  const exportPgn = () => {
-    const pgnLines = pairs.map(p =>
-      `${p.number}. ${p.white}${p.black ? ' ' + p.black : ''}`
-    );
-    const pgn = pgnLines.join('\n') + (gameResult ? ' ' + gameResult : '');
-    navigator.clipboard.writeText(pgn);
-  };
 
   return (
     <>
@@ -40,11 +32,19 @@ export default function MoveHistory({ moves, gameResult }) {
             {pairs.map(p => (
               <tr key={p.number}>
                 <td className="move-num">{p.number}.</td>
-                <td className={`move-cell ${p.white === moves[moves.length - 1] && moves.length % 2 === 1 ? 'last' : ''}`}>
-                  {p.white && <span className="move-san">{p.white}</span>}
+                <td className={`move-cell ${p.white.index === historyIndex ? 'last' : ''}`}>
+                  {p.white && (
+                    <span className="move-san" onClick={() => onMoveClick(p.white.index)}>
+                      {p.white.san}
+                    </span>
+                  )}
                 </td>
-                <td className={`move-cell ${p.black === moves[moves.length - 1] && moves.length % 2 === 0 ? 'last' : ''}`}>
-                  {p.black && <span className="move-san">{p.black}</span>}
+                <td className={`move-cell ${p.black && p.black.index === historyIndex ? 'last' : ''}`}>
+                  {p.black && (
+                    <span className="move-san" onClick={() => onMoveClick(p.black.index)}>
+                      {p.black.san}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
